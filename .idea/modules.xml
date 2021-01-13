@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Timey.iml" filepath="$PROJECT_DIR$/Timey.iml" group="Timey" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="Timey/app" />
+      <module fileurl="file://$PROJECT_DIR$/Timey.iml" filepath="$PROJECT_DIR$/Timey.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/Timey.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/Timey.app.iml" />
     </modules>
   </component>
 </project>

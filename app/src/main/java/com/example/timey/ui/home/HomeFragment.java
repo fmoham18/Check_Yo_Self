@@ -1,5 +1,6 @@
 package com.example.timey.ui.home;
 
+import android.app.ActivityManager;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +14,11 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 
 import com.example.timey.R;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static android.content.Context.ACTIVITY_SERVICE;
 
 public class HomeFragment extends Fragment {
 
@@ -30,6 +36,21 @@ public class HomeFragment extends Fragment {
                 textView.setText(s);
             }
         });
+
+        getProcessList();
         return root;
+    }
+
+    public List<String> getProcessList(){
+        ArrayList<String> processList= new ArrayList<String>();
+        ActivityManager activityManager = (ActivityManager) getActivity().getSystemService(ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> procInfos = activityManager.getRunningAppProcesses();
+        int i=0;
+        for(ActivityManager.RunningAppProcessInfo proc: procInfos){
+            processList.add(proc.toString());
+            System.out.println("proc "+i+":"+proc.toString());
+            i+=1;
+        }
+        return processList;
     }
 }
