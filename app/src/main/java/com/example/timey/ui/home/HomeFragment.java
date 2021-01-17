@@ -20,6 +20,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -36,8 +37,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -47,6 +51,7 @@ public class HomeFragment extends Fragment {
 
     private HomeViewModel homeViewModel;
     ListView lv;
+    HashMap<String, HashSet<String>> trackList2Strings = new HashMap<>();
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -64,13 +69,29 @@ public class HomeFragment extends Fragment {
         List<ApplicationInfo> nonSystemApps = apps
                 .stream()
                 .filter((appInfo) -> (appInfo.flags &
-                (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0)
+                        (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0)
                 .collect(Collectors.toList());
-        String[] appNames = nonSystemApps.stream().map(app->app.packageName).toArray(String[]::new);
-        Drawable[] appIcons = nonSystemApps.stream().map(app->app.loadIcon(pm)).toArray(Drawable[]::new);
+        String[] appNames = nonSystemApps.stream()
+                .map(app -> pm.getApplicationLabel(app).toString())
+                .toArray(String[]::new);
 
-        AppListViewAdapter appLVAdapter = new AppListViewAdapter(getContext(), appNames,appIcons);
+        String[] packageNames = nonSystemApps.stream().map(app -> app.packageName).toArray(String[]::new);
 
+        Drawable[] appIcons = nonSystemApps.stream().map(app -> app.loadIcon(pm)).toArray(Drawable[]::new);
+        HashSet<String> selectedApps = new HashSet<String>();
+
+        AppListViewAdapter appLVAdapter = new AppListViewAdapter(getContext(), appNames, packageNames, appIcons, selectedApps);
+
+        ((Button) root.findViewById(R.id.debugButton)).setOnClickListener(view ->
+        {
+            String line = "";
+            for (String entry : selectedApps) {
+                line += "|" + entry;
+            }
+            ;
+            Toast.makeText(getContext(), line, Toast.LENGTH_SHORT).show();
+
+        });
 
         lv.setAdapter(appLVAdapter);
         System.out.println(activeList(new ArrayList<String>()));
