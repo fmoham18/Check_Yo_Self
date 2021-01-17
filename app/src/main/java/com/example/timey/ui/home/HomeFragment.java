@@ -1,6 +1,7 @@
 package com.example.timey.ui.home;
 
 import android.app.ActivityManager;
+import android.app.Application;
 import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
@@ -8,6 +9,8 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.Icon;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -35,6 +38,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static android.content.Context.ACTIVITY_SERVICE;
@@ -52,18 +56,23 @@ public class HomeFragment extends Fragment {
 
 
         final PackageManager pm = getContext().getPackageManager();
+
         List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
 
-//        lv = root.findViewById(R.id.listView);
-//
-//        List<String> app_names =apps.stream().filter((appInfo) -> (appInfo.flags &
-//                (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0)
-//                .map(appInfo->appInfo.packageName).collect(Collectors.toList());
-//        String[] app_names_arr= (String[]) app_names.toArray();
-//        AppListViewAdapter appLVAdapter = new AppListViewAdapter(getContext(),null,app_names_arr);
-//
-//
-//        lv.setAdapter( appLVAdapter);
+        lv = root.findViewById(R.id.listView);
+
+        List<ApplicationInfo> nonSystemApps = apps
+                .stream()
+                .filter((appInfo) -> (appInfo.flags &
+                (ApplicationInfo.FLAG_SYSTEM | ApplicationInfo.FLAG_UPDATED_SYSTEM_APP)) != 0)
+                .collect(Collectors.toList());
+        String[] appNames = nonSystemApps.stream().map(app->app.packageName).toArray(String[]::new);
+        Drawable[] appIcons = nonSystemApps.stream().map(app->app.loadIcon(pm)).toArray(Drawable[]::new);
+
+        AppListViewAdapter appLVAdapter = new AppListViewAdapter(getContext(), appNames,appIcons);
+
+
+        lv.setAdapter(appLVAdapter);
         System.out.println(activeList(new ArrayList<String>()));
 
         return root;
