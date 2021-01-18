@@ -43,7 +43,6 @@ public class HomeFragment extends Fragment {
     private int KILL_PERMISSION = 102;
     private HomeViewModel homeViewModel;
     ListView lv;
-    private View _root;
     HashMap<String, HashSet<String>> trackList2Strings = new HashMap<>();
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -52,7 +51,6 @@ public class HomeFragment extends Fragment {
                 ViewModelProviders.of(this).get(HomeViewModel.class);
         final View root = inflater.inflate(R.layout.fragment_home, container, false);
 
-        _root = root;
 
         final PackageManager pm = getContext().getPackageManager();
 
@@ -101,52 +99,57 @@ public class HomeFragment extends Fragment {
         });
 
         lv.setAdapter(appLVAdapter);
-        List<UsageStats> lists = activeList(new ArrayList<String>());
-
-//        renderGraph();
+        List<UsageStats> stats = activeList(null);
+        renderGraph(root, stats);
         return root;
     }
-//
-//public void renderGraph(){
-//    BarChart chart = _root.findViewById(R.id.barchart);
-//
-//    ArrayList NoOfEmp = new ArrayList();
-//
-//    NoOfEmp.add(new BarEntry(945f, 0));
-//    NoOfEmp.add(new BarEntry(1040f, 1));
-//    NoOfEmp.add(new BarEntry(1133f, 2));
-//    NoOfEmp.add(new BarEntry(1240f, 3));
-//    NoOfEmp.add(new BarEntry(1369f, 4));
-//    NoOfEmp.add(new BarEntry(1487f, 5));
-//    NoOfEmp.add(new BarEntry(1501f, 6));
-//    NoOfEmp.add(new BarEntry(1645f, 7));
-//    NoOfEmp.add(new BarEntry(1578f, 8));
-//    NoOfEmp.add(new BarEntry(1695f, 9));
-//
-//    ArrayList year = new ArrayList();
-//
-//    year.add("2008");
-//    year.add("2009");
-//    year.add("2010");
-//    year.add("2011");
-//    year.add("2012");
-//    year.add("2013");
-//    year.add("2014");
-//    year.add("2015");
-//    year.add("2016");
-//    year.add("2017");
-//
-//    BarDataSet bardataset = new BarDataSet(NoOfEmp, "No Of Employee");
-//
-//    chart.animateY(5000);
-//    BarData data = new BarData( bardataset);
-////    data.set
-//    bardataset.setColors(ColorTemplate.COLORFUL_COLORS);
-//    chart.setData(data);
-//}
-    public List<UsageStats> activeList(ArrayList<String> appList) {
+
+    //
+    private void renderGraph(View root, List<UsageStats> stats) {
+        BarChart chart = root.findViewById(R.id.barchart);
+
+        ArrayList<BarEntry> NoOfEmp = new ArrayList<>();
+
+        for (int i = 0; i < stats.size(); i++) {
+            UsageStats stat = stats.get(i);
+            NoOfEmp.add(new BarEntry(i, stat.getTotalTimeInForeground() / 1000.0f));
+        }
+
+//        ArrayList<String>
+
+        BarDataSet bardataset = new BarDataSet(NoOfEmp, "App time use");
+
+        chart.animateY(5000);
+        chart.fitScreen();
+        chart.setFitBars(true);
+        chart.getLegend().setEnabled(true);
+        BarData data = new BarData(bardataset);
+
+        bardataset.setColors(ColorTemplate.COLORFUL_COLORS);
+        chart.setData(data);
+    }
+
+    private List<UsageStats> activeList(ArrayList<String> appList) {
+
+        _getStats_Permission();
         long endTime = System.currentTimeMillis();
-        long beginTime = endTime - 1000;
+        long beginTime = endTime - 100000;
+
+        UsageStatsManager stats = (UsageStatsManager) getContext().getSystemService(Context.USAGE_STATS_SERVICE);
+        List<UsageStats> usageStatMap = stats.queryUsageStats(stats.INTERVAL_BEST,
+                beginTime,
+                endTime);
+        String line = "";
+        for (UsageStats entry : usageStatMap) {
+            line += "\n" + "\n pack: " + entry.getPackageName() + "time(s): " + (entry.getTotalTimeInForeground() / 1000);
+        }
+        System.out.println(line);
+        return usageStatMap == null ? new ArrayList<>() : usageStatMap;
+
+
+    }
+
+    private boolean _getStats_Permission() {
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.PACKAGE_USAGE_STATS) == PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(getContext(), "Permission granted", Toast.LENGTH_SHORT).show();
         } else if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.PACKAGE_USAGE_STATS)) {
@@ -177,17 +180,7 @@ public class HomeFragment extends Fragment {
             ActivityCompat
                     .requestPermissions(getActivity(), new String[]{Manifest.permission.PACKAGE_USAGE_STATS}, STATS_PERMISSION);
         }
-
-        UsageStatsManager stats = (UsageStatsManager) getContext().getSystemService(Context.USAGE_STATS_SERVICE);
-        List<UsageStats> usageStatMap = stats.queryUsageStats(stats.INTERVAL_BEST,
-                beginTime,
-                endTime);
-        String line = "";
-//        for (UsageStats entry : usageStatMap) {
-//            line += "\n" + "\n pack: " + entry.getPackageName() + "time(s): " + (entry.getTotalTimeInForeground() / 1000);
-//        }
-//        ;
-        return usageStatMap;
+        return ContextCompat.checkSelfPermission(getContext(), Manifest.permission.PACKAGE_USAGE_STATS) == PackageManager.PERMISSION_GRANTED;
     }
 
     @Override
