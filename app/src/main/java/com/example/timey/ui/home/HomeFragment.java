@@ -1,64 +1,49 @@
 package com.example.timey.ui.home;
 
 import android.Manifest;
-import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.AlertDialog;
-import android.app.Application;
 import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
-import android.graphics.drawable.Icon;
 import android.os.Bundle;
-import android.provider.Settings;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.timey.Compoenets.AppListViewAdapter;
-import com.example.timey.MainActivity;
 import com.example.timey.R;
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.utils.ColorTemplate;
 
-import java.io.BufferedReader;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
-
-import static android.content.Context.ACTIVITY_SERVICE;
 
 public class HomeFragment extends Fragment {
     private int STATS_PERMISSION = 101;
+    private int KILL_PERMISSION = 102;
     private HomeViewModel homeViewModel;
     ListView lv;
+    private View _root;
     HashMap<String, HashSet<String>> trackList2Strings = new HashMap<>();
 
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -67,6 +52,7 @@ public class HomeFragment extends Fragment {
                 ViewModelProviders.of(this).get(HomeViewModel.class);
         final View root = inflater.inflate(R.layout.fragment_home, container, false);
 
+        _root = root;
 
         final PackageManager pm = getContext().getPackageManager();
 
@@ -99,23 +85,66 @@ public class HomeFragment extends Fragment {
 
         ((Button) root.findViewById(R.id.debugButton)).setOnClickListener(view ->
         {
-            String line = "";
-            for (String entry : selectedApps) {
-                line += "|" + entry;
-            }
-            ;
-            Toast.makeText(getContext(), line, Toast.LENGTH_SHORT).show();
+//            String line = "";
+//            for (String entry : selectedApps) {
+//                line += "|" + entry;
+//            }
+//            ;
+//            Toast.makeText(getContext(), line, Toast.LENGTH_SHORT).show();
+//            ActivityCompat.requestPermissions(HomeFragment.this.getActivity(),
+//                    new String[]
+//                            {Manifest.permission.KILL_BACKGROUND_PROCESSES},
+//                    KILL_PERMISSION);
+//            ActivityManager mActivityManager = (ActivityManager) getContext().getSystemService(Context.ACTIVITY_SERVICE);
+//            mActivityManager.killBackgroundProcesses("com.android.chrome");
 
         });
 
         lv.setAdapter(appLVAdapter);
-        System.out.println(activeList(new ArrayList<String>()));
+        List<UsageStats> lists = activeList(new ArrayList<String>());
 
+//        renderGraph();
         return root;
     }
-
-
-    public String activeList(ArrayList<String> appList) {
+//
+//public void renderGraph(){
+//    BarChart chart = _root.findViewById(R.id.barchart);
+//
+//    ArrayList NoOfEmp = new ArrayList();
+//
+//    NoOfEmp.add(new BarEntry(945f, 0));
+//    NoOfEmp.add(new BarEntry(1040f, 1));
+//    NoOfEmp.add(new BarEntry(1133f, 2));
+//    NoOfEmp.add(new BarEntry(1240f, 3));
+//    NoOfEmp.add(new BarEntry(1369f, 4));
+//    NoOfEmp.add(new BarEntry(1487f, 5));
+//    NoOfEmp.add(new BarEntry(1501f, 6));
+//    NoOfEmp.add(new BarEntry(1645f, 7));
+//    NoOfEmp.add(new BarEntry(1578f, 8));
+//    NoOfEmp.add(new BarEntry(1695f, 9));
+//
+//    ArrayList year = new ArrayList();
+//
+//    year.add("2008");
+//    year.add("2009");
+//    year.add("2010");
+//    year.add("2011");
+//    year.add("2012");
+//    year.add("2013");
+//    year.add("2014");
+//    year.add("2015");
+//    year.add("2016");
+//    year.add("2017");
+//
+//    BarDataSet bardataset = new BarDataSet(NoOfEmp, "No Of Employee");
+//
+//    chart.animateY(5000);
+//    BarData data = new BarData( bardataset);
+////    data.set
+//    bardataset.setColors(ColorTemplate.COLORFUL_COLORS);
+//    chart.setData(data);
+//}
+    public List<UsageStats> activeList(ArrayList<String> appList) {
         long endTime = System.currentTimeMillis();
         long beginTime = endTime - 1000;
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.PACKAGE_USAGE_STATS) == PackageManager.PERMISSION_GRANTED) {
@@ -154,11 +183,11 @@ public class HomeFragment extends Fragment {
                 beginTime,
                 endTime);
         String line = "";
-        for (UsageStats entry : usageStatMap) {
-            line += "\n" + "\n pack: " + entry.getPackageName() + "time(s): " + (entry.getTotalTimeInForeground() / 1000);
-        }
-        ;
-        return line;
+//        for (UsageStats entry : usageStatMap) {
+//            line += "\n" + "\n pack: " + entry.getPackageName() + "time(s): " + (entry.getTotalTimeInForeground() / 1000);
+//        }
+//        ;
+        return usageStatMap;
     }
 
     @Override
