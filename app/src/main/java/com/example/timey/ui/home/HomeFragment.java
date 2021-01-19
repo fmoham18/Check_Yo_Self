@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -27,15 +26,24 @@ import androidx.lifecycle.ViewModelProviders;
 import com.example.timey.Compoenets.AppListViewAdapter;
 import com.example.timey.R;
 import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.components.AxisBase;
+import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.github.mikephil.charting.utils.ViewPortHandler;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class HomeFragment extends Fragment {
@@ -56,7 +64,7 @@ public class HomeFragment extends Fragment {
 
         List<ApplicationInfo> apps = pm.getInstalledApplications(PackageManager.GET_META_DATA);
 
-        lv = root.findViewById(R.id.listView);
+//        lv = root.findViewById(R.id.listView);
 
         List<ApplicationInfo> nonSystemApps = apps
                 .stream()
@@ -98,7 +106,7 @@ public class HomeFragment extends Fragment {
 
         });
 
-        lv.setAdapter(appLVAdapter);
+//        lv.setAdapter(appLVAdapter);
         List<UsageStats> stats = activeList(null);
         renderGraph(root, stats);
         return root;
@@ -112,15 +120,21 @@ public class HomeFragment extends Fragment {
 
         for (int i = 0; i < stats.size(); i++) {
             UsageStats stat = stats.get(i);
-            NoOfEmp.add(new BarEntry(i, stat.getTotalTimeInForeground() / 1000.0f));
+            NoOfEmp.add(new BarEntry(i, stat.getTotalTimeInForeground() / 1000.0f, stat.getPackageName()));
         }
 
-//        ArrayList<String>
-
         BarDataSet bardataset = new BarDataSet(NoOfEmp, "App time use");
-
+        bardataset.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getBarLabel(BarEntry barEntry) {
+                return barEntry.getData().toString();
+            }
+        });
         chart.animateY(5000);
         chart.fitScreen();
+
+//        chart.getXAxis().setDrawAxisLine(false);
+        chart.getXAxis().setLabelRotationAngle(90);
         chart.setFitBars(true);
         chart.getLegend().setEnabled(true);
         BarData data = new BarData(bardataset);
@@ -131,25 +145,27 @@ public class HomeFragment extends Fragment {
 
     private List<UsageStats> activeList(ArrayList<String> appList) {
 
-        _getStats_Permission();
+        _getStatsPermission();
         long endTime = System.currentTimeMillis();
-        long beginTime = endTime - 100000;
+        long beginTime = endTime - 1000;
 
         UsageStatsManager stats = (UsageStatsManager) getContext().getSystemService(Context.USAGE_STATS_SERVICE);
-        List<UsageStats> usageStatMap = stats.queryUsageStats(stats.INTERVAL_BEST,
-                beginTime,
-                endTime);
+        ArrayList<UsageStats> usageStatMap = new ArrayList<>(Optional.ofNullable(
+                stats.queryAndAggregateUsageStats(beginTime, endTime))
+                .orElse(new HashMap<>()).values());
         String line = "";
         for (UsageStats entry : usageStatMap) {
-            line += "\n" + "\n pack: " + entry.getPackageName() + "time(s): " + (entry.getTotalTimeInForeground() / 1000);
+            line += "\n" + "\n pack: " + entry.getPackageName() + "time(s): " + (entry.getTotalTimeInForeground() / 1000)
+            ;
         }
         System.out.println(line);
-        return usageStatMap == null ? new ArrayList<>() : usageStatMap;
+        Collections.sort(usageStatMap, Collections.reverseOrder((usageStat, otherUsageStat) -> Long.compare(usageStat.getTotalTimeInForeground(), otherUsageStat.getTotalTimeInForeground())));
+        return usageStatMap;
 
 
     }
 
-    private boolean _getStats_Permission() {
+    private boolean _getStatsPermission() {
         if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.PACKAGE_USAGE_STATS) == PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(getContext(), "Permission granted", Toast.LENGTH_SHORT).show();
         } else if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(), Manifest.permission.PACKAGE_USAGE_STATS)) {
